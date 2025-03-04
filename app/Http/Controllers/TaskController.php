@@ -27,8 +27,6 @@ class TaskController extends Controller
     
         return $pdf->download('report.pdf');
     }
-    
-    
 
     public function store(Request $request)
     {
