@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Project;
+use App\Models\Task;
 
 class ProjectController extends Controller
 {
@@ -55,5 +56,19 @@ class ProjectController extends Controller
         $project->save();
 
         return response()->json($project);
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function destroy($id)
+    {
+        Task::where('project_id', $id)->delete();
+        Project::destroy($id);
+
+        return redirect()->route('home');
     }
 }

@@ -1,25 +1,37 @@
-<div class="modal fade" id="addTaskModal" tabindex="-1" role="dialog" aria-labelledby="addTaskModalLabel" aria-hidden="true">
+<!-- Modal para añadir/editar tarea -->
+<div class="modal fade" id="taskModal" tabindex="-1" role="dialog" aria-labelledby="taskModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="addTaskModalLabel">Añadir Tarea</h5>
+                <h5 class="modal-title" id="taskModalLabel">Añadir Tarea</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
             <div class="modal-body">
-                <form id="addTaskForm">
+                <form id="taskForm">
+                    @csrf
+                    <input type="hidden" id="taskMethod" name="_method" value="POST">
+                    <input type="hidden" id="taskId" name="id">
                     <div class="form-group">
                         <label for="taskName">Nombre de la Tarea</label>
-                        <input type="text" class="form-control" id="taskName" name="taskName" required>
+                        <input type="text" class="form-control" id="taskName" name="name" required>
                     </div>
                     <div class="form-group">
-                        <label for="taskDescription">Descripción de la Tarea</label>
-                        <textarea class="form-control" id="taskDescription" name="taskDescription" rows="3"></textarea>
+                        <label for="taskDescription">Descripción</label>
+                        <textarea class="form-control" id="taskDescription" name="description"></textarea>
                     </div>
                     <div class="form-group">
-                        <label for="taskUser">Asignar a Usuario</label>
-                        <select class="form-control" id="taskUser" name="taskUser">
+                        <label for="taskProjectId">Proyecto</label>
+                        <select class="form-control" id="taskProjectId" name="project_id">
+                            @foreach($projects as $project)
+                                <option value="{{ $project->id }}">{{ $project->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="taskUserId">Usuario</label>
+                        <select class="form-control" id="taskUserId" name="user_id">
                             @foreach($users as $user)
                                 <option value="{{ $user->id }}">{{ $user->name }}</option>
                             @endforeach
@@ -33,12 +45,9 @@
                         <label for="taskEndDate">Fecha de Fin</label>
                         <input type="datetime-local" class="form-control" id="taskEndDate" name="end_datetime" required>
                     </div>
-                    <input type="hidden" id="taskProjectId" name="taskProjectId">
+                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                    <button type="button" id="taskDeleteButton" class="btn btn-danger">Eliminar</button>
                 </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
-                <button type="button" class="btn btn-primary" id="saveTaskButton">Guardar Tarea</button>
             </div>
         </div>
     </div>

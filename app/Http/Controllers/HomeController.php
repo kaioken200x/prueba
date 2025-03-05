@@ -27,8 +27,8 @@ class HomeController extends Controller
     public function index()
     {
         $projects = Project::orderBy('updated_at', 'desc')->with('user')->get();
-        $tareas = Task::with('project')->get();
+        $tasks = Task::with('project')->get();
         $users = User::all();
-        return view('home', compact('projects','tareas','users'));
+        return view('home', compact('projects','tasks','users'));
     }
 }

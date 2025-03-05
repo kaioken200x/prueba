@@ -38,12 +38,14 @@
                         <td>{{ $user->email }}</td>
                         <td>{{ $user->is_admin ? 'Sí' : 'No' }}</td>
                         <td>
-                            <a href="{{ route('users.edit', $user) }}" class="btn btn-warning"><i class="fas fa-pen"></i> Editar</a>
-                            <form action="{{ route('users.destroy', $user) }}" method="POST" style="display:inline;">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="btn btn-danger"><i class="fas fa-trash"></i> Eliminar</button>
-                            </form>
+                            @if (Auth::user()->is_admin)
+                                <a href="{{ route('users.edit', $user) }}" class="btn btn-warning"><i class="fas fa-pen"></i> Editar</a>
+                                <form action="{{ route('users.destroy', $user) }}" method="POST" style="display:inline;">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-danger"><i class="fas fa-trash"></i> Eliminar</button>
+                                </form>
+                            @endif
                         </td>
                     </tr>
                 @endforeach

@@ -4,7 +4,7 @@
     <div class="card-header d-flex justify-content-between align-items-center">
         <h3>Proyectos</h3>
         @if (Auth::user()->is_admin)
-            <a href="#" class="btn btn-outline-primary" data-toggle="modal" data-target="#addProjectModal">
+            <a href="#" class="btn btn-outline-success" data-toggle="modal" data-target="#addProjectModal">
                 <i class="fas fa-plus"></i> Añadir Proyecto
             </a>
         @endif
@@ -22,6 +22,16 @@
                         <h5 class="card-subtitle mb-1 text-muted">Nombre del Proyecto: {{ $project->name }}</h5>
                         <h6 class="card-subtitle text-muted">Creado por: {{ $project->user->name }}</h6>
                         <p class="card-text"><small class="text-muted">Creado el: {{ $project->created_at->format('d/m/Y') }}</small></p>
+                        @if (Auth::user()->is_admin)
+                           
+                            <a href="{{ route('projects.destroy', $project->id) }}" class="btn btn-outline-danger btn-sm" onclick="event.preventDefault(); document.getElementById('deleteProjectForm{{ $project->id }}').submit();">
+                                <i class="fas fa-trash"></i> Eliminar
+                            </a>
+                            <form id="deleteProjectForm{{ $project->id }}" action="{{ route('projects.destroy', $project->id) }}" method="POST" style="display: none;">
+                                @csrf
+                                @method('DELETE')
+                            </form>
+                        @endif
                     </div>
                 </div>
             @endforeach
@@ -73,50 +83,79 @@
                 var copiedEventObject = $.extend({}, originalEventObject);
 
                 copiedEventObject.start = date;
+                $('#taskForm').trigger('reset');
+                $('#taskModalLabel').text('Añadir Tarea');
+                $('#taskForm').attr('action', '{{ route('tasks.store') }}');
+                $('#taskMethod').val('POST');
                 $('#taskProjectId').val(copiedEventObject.projectId);
                 $('#taskStartDate').val(date.format('YYYY-MM-DDTHH:mm'));
-                $('#addTaskModal').modal('show');
+                $('#taskModal').modal('show');
             },
             events: [
-                @foreach($tareas as $tarea)
+                @foreach($tasks as $task)
                     {
-                        title: '{{ $tarea->project->name }}',
-                        start: '{{ $tarea->start_datetime }}',
-                        end: '{{ $tarea->end_datetime }}'
+                        title: '{{ $task->project->name }}',
+                        name: '{{ $task->name }}',
+                        start: '{{ $task->start_datetime }}',
+                        end: '{{ $task->end_datetime }}',
+                        id: '{{ $task->id }}',
+                        description: '{{ $task->description }}',
+                        project_id: '{{ $task->project_id }}',
+                        user_id: '{{ $task->project->user_id }}'
                     },
                 @endforeach
-            ]
+            ],
+            eventClick: function(event) {
+                $('#taskForm').trigger('reset');
+                $('#taskModalLabel').text('Editar Tarea');
+                $('#taskForm').attr('action', '{{ route('tasks.update', '') }}/' + event.id);
+                $('#taskMethod').val('PUT');
+                $('#taskId').val(event.id);
+                $('#taskName').val(event.name);
+                $('#taskDescription').val(event.description);
+                $('#taskProjectId').val(event.project_id);
+                $('#taskUserId').val(event.user_id);
+                $('#taskStartDate').val(moment(event.start).format('YYYY-MM-DD HH:mm'));
+                $('#taskEndDate').val(moment(event.end).format('YYYY-MM-DD HH:mm'));
+                $('#taskModal').modal('show');
+                
+                $('#taskDeleteButton').off('click').on('click', function() {
+                    if (confirm('¿Estás seguro de que deseas eliminar esta tarea?')) {
+                        $.ajax({
+                            url: '{{ route('tasks.destroy', '') }}/' + event.id,
+                            method: 'DELETE',
+                            data: {
+                                _token: '{{ csrf_token() }}'
+                            },
+                            success: function(response) {
+                                $('#taskModal').modal('hide');
+                                $('#calendar').fullCalendar('removeEvents', event.id);
+                                window.location.href = '{{ route('home') }}';
+                            },
+                            error: function(xhr, status, error) {
+                                console.error('Error al eliminar la tarea:', error);
+                            }
+                        });
+                    }
+                });
+            }
         });
 
         // Guardar la tarea
-        $('#saveTaskButton').on('click', function() {
-            var taskName = $('#taskName').val();
-            var taskDescription = $('#taskDescription').val();
-            var taskProjectId = $('#taskProjectId').val();
-            var taskUserId = $('#taskUser').val();
-            var taskStartDate = $('#taskStartDate').val();
-            var taskEndDate = $('#taskEndDate').val();
+        $('#taskForm').on('submit', function(e) {
+            e.preventDefault();
+
+            var form = $(this);
+            var url = form.attr('action');
+            var method = $('#taskMethod').val();
 
             $.ajax({
-                url: '{{ route('tasks.store') }}',
-                method: 'POST',
-                data: {
-                    _token: '{{ csrf_token() }}',
-                    name: taskName,
-                    description: taskDescription,
-                    project_id: taskProjectId,
-                    user_id: taskUserId,
-                    start_datetime: taskStartDate,
-                    end_datetime: taskEndDate
-                },
+                url: url,
+                method: method,
+                data: form.serialize(),
                 success: function(response) {
-                    $('#addTaskModal').modal('hide');
-                    $('#calendar').fullCalendar('renderEvent', {
-                        title: response.name,
-                        start: response.start_datetime,
-                        end: response.end_datetime
-                    }, true);
-
+                    $('#taskModal').modal('hide');
+                    $('#calendar').fullCalendar('refetchEvents');
                     window.location.href = '{{ route('home') }}';
                 },
                 error: function(xhr, status, error) {

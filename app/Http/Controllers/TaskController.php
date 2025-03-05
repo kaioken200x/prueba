@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Project;
 use Illuminate\Http\Request;
 use App\Models\Task;
-use Barryvdh\Snappy\Facades\SnappyPdf as PDF;
+use Barryvdh\DomPDF\Facade as PDF;
 use Carbon\Carbon;
 
 class TaskController extends Controller
@@ -23,7 +24,7 @@ class TaskController extends Controller
         });
     
         $pdf = PDF::loadView('tasks.report', compact('tasks'))
-            ->setOption('encoding', 'UTF-8');
+            ->setPaper('A4', 'portrait');
     
         return $pdf->download('report.pdf');
     }
@@ -46,15 +47,21 @@ class TaskController extends Controller
         $task->end_datetime = $request->end_datetime;
         $task->save();
 
-        $task = $task->fresh();
-        $task->name = utf8_encode($task->name);
-        $task->description = utf8_encode($task->description);
-
         return response()->json($task);
     }
 
     public function update(Request $request, $id)
     {
+        $request->validate([
+            'user_id' => 'required|exists:users,id',
+        ]);
+
+        $project = Project::find($request->project_id);
+        if ($project && $project->user_id != $request->user_id) {
+            $project->user_id = $request->user_id;
+            $project->save();
+        }
+
         $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -63,7 +70,7 @@ class TaskController extends Controller
             'end_datetime' => 'required|date_format:Y-m-d\TH:i|after_or_equal:start_datetime',
         ]);
 
-        $task = Task::find($id);
+        $task = Task::findOrFail($id);
         $task->name = $request->name;
         $task->description = $request->description;
         $task->project_id = $request->project_id;
@@ -71,10 +78,12 @@ class TaskController extends Controller
         $task->end_datetime = $request->end_datetime;
         $task->save();
 
-        $task = $task->fresh();
-        $task->name = utf8_encode($task->name);
-        $task->description = utf8_encode($task->description);
-
         return response()->json($task);
+    }
+
+    public function destroy($id)
+    {
+        Task::destroy($id);
+        return response()->json(null, 204);
     }
 }
